@@ -1,0 +1,53 @@
+services:
+
+    postgres:
+        image: postgres:latest
+        environment:
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_DB=postgres
+        volumes:
+            - ./db/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+            - postgres_data:/var/lib/postgresql/data
+        ports:
+            - "9100:5432"
+        restart: unless-stopped
+        networks:
+            - autoppp_ginan
+
+    grafana:
+        image: grafana/grafana-oss:latest
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=password
+            - GF_USERS_ALLOW_SIGN_UP=false
+        depends_on:
+            - postgres
+        ports:
+            - "3000:3000"
+        volumes:
+            - ./grafana:/etc/grafana/provisioning:ro
+        restart: unless-stopped
+        networks:
+            - autoppp_ginan
+
+    autoppp:
+        image: autoppp_ginan:latest
+        depends_on:
+            - postgres
+        environment:
+            - DB_HOST=postgres
+            - DB_PORT=5432
+            - DB_NAME=postgres
+            - DB_USER=postgres
+            - DB_PASSWORD=password
+        volumes:
+            - ./resources:/autoppp_ginan/resources:ro
+            - /mnt/refgps:/mnt/refgps:ro
+        networks:
+            - autoppp_ginan
+
+volumes:
+    postgres_data:
+
+networks:
+    autoppp_ginan:

@@ -1,0 +1,207 @@
+{
+  "title": "autoPPP Ginan",
+  "uid": "autoppp-ginan",
+  "schemaVersion": 38,
+  "version": 1,
+  "timezone": "utc",
+  "time": { "from": "now-30d", "to": "now" },
+  "refresh": "1h",
+  "templating": {
+    "list": [
+      {
+        "name": "sitename",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+        "query": "SELECT DISTINCT sitename FROM position ORDER BY sitename",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "label": "Station"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Easting",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT time_of_data AS \"time\", easting FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "rawSql": "SELECT time_of_data AS \"time\", easting + abs(dx) AS \"easting_upper\" FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        },
+        {
+          "refId": "C",
+          "rawSql": "SELECT time_of_data AS \"time\", easting - abs(dx) AS \"easting_lower\" FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "m", "custom": { "lineWidth": 2, "fillOpacity": 0 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "easting_upper" },
+            "properties": [
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "custom.fillOpacity", "value": 20 },
+              { "id": "custom.fillBelowTo", "value": "easting_lower" },
+              { "id": "custom.hideFrom", "value": { "legend": true, "tooltip": true, "viz": false } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "easting_lower" },
+            "properties": [
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "custom.hideFrom", "value": { "legend": true, "tooltip": true, "viz": false } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Northing",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT time_of_data AS \"time\", northing FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "rawSql": "SELECT time_of_data AS \"time\", northing + abs(dy) AS \"northing_upper\" FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        },
+        {
+          "refId": "C",
+          "rawSql": "SELECT time_of_data AS \"time\", northing - abs(dy) AS \"northing_lower\" FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "m", "custom": { "lineWidth": 2, "fillOpacity": 0 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "northing_upper" },
+            "properties": [
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "custom.fillOpacity", "value": 20 },
+              { "id": "custom.fillBelowTo", "value": "northing_lower" },
+              { "id": "custom.hideFrom", "value": { "legend": true, "tooltip": true, "viz": false } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "northing_lower" },
+            "properties": [
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "custom.hideFrom", "value": { "legend": true, "tooltip": true, "viz": false } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Ellipsoidal Height",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT time_of_data AS \"time\", h_e FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "rawSql": "SELECT time_of_data AS \"time\", h_e + abs(dz) AS \"h_e_upper\" FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        },
+        {
+          "refId": "C",
+          "rawSql": "SELECT time_of_data AS \"time\", h_e - abs(dz) AS \"h_e_lower\" FROM position WHERE sitename IN ($sitename) AND $__timeFilter(time_of_data) ORDER BY time_of_data",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "m", "custom": { "lineWidth": 2, "fillOpacity": 0 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "h_e_upper" },
+            "properties": [
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "custom.fillOpacity", "value": 20 },
+              { "id": "custom.fillBelowTo", "value": "h_e_lower" },
+              { "id": "custom.hideFrom", "value": { "legend": true, "tooltip": true, "viz": false } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "h_e_lower" },
+            "properties": [
+              { "id": "custom.lineWidth", "value": 0 },
+              { "id": "custom.hideFrom", "value": { "legend": true, "tooltip": true, "viz": false } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "type": "geomap",
+      "title": "Station Locations",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 10 },
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT DISTINCT ON (sitename) sitename, lat AS latitude, lon AS longitude FROM position WHERE sitename IN ($sitename) ORDER BY sitename, time_of_data DESC",
+          "format": "table"
+        }
+      ],
+      "options": {
+        "view": { "id": "fit", "lat": 0, "lon": 0, "zoom": 5 },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "Stations",
+            "config": {
+              "style": {
+                "size": { "fixed": 10 },
+                "symbol": { "mode": "fixed", "fixed": "img/icons/marker/circle.svg" }
+              },
+              "showLegend": true
+            },
+            "tooltip": true,
+            "location": { "mode": "auto" }
+          }
+        ],
+        "controls": { "showZoom": true, "mouseWheelZoom": true }
+      }
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Latest Solutions",
+      "gridPos": { "x": 0, "y": 34, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT DISTINCT ON (sitename) sitename, easting, northing, h_e, utm_zone, lat, lon, time_of_data, time_of_calc FROM position ORDER BY sitename, time_of_data DESC",
+          "format": "table"
+        }
+      ]
+    }
+  ]
+}

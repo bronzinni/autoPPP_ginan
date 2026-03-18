@@ -1,0 +1,14 @@
+{
+"ginan_instances": 2,
+"pea_path": "/usr/bin/pea",
+"observation_file_template": "/mnt/refgps/GPSDATA/RINEX3/DNK/~YEAR~/~DOY~/~SITENAME~_R_~YEAR~~DOY~0000_01D_30S_MO.crx.gz",
+"resources_directory": "./resources",
+"output_directory": "./workdir",
+"offline_input": {"ATX": "igs20.atx", "gpt2": "tables/gpt_25.grd", "ocean_tide": "tables/FES2014B.BLQ"},
+"online_input": ["CLK", "BIA", "SP3", "ERP", "OBX"],
+"ftp_servers": [
+	{"host": "igs.ign.fr", "remote_folder": "/pub/igs/products/~WEEK~",
+	 "files": {"CLK": "COD0OPSRAP_~YEAR~~DOY~0000_01D_30S_CLK.CLK.gz", "BIA": "COD0OPSRAP_~YEAR~~DOY~0000_01D_01D_OSB.BIA.gz", "SP3": "COD0OPSRAP_~YEAR~~DOY~0000_01D_05M_ORB.SP3.gz", "ERP": "COD0OPSRAP_~YEAR~~DOY~0000_01D_01D_ERP.ERP.gz", "OBX": "COD0OPSRAP_~YEAR~~DOY~0000_01D_30S_ATT.OBX.gz"}
+	}
+	]
+}
