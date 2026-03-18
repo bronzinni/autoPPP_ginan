@@ -6,7 +6,6 @@ RUN apt-get update && apt-get install -y cron \
 WORKDIR /autoppp_ginan
 
 COPY autoppp.py .
-COPY config.json .
 COPY entrypoint.sh .
 
 RUN echo "0 1 * * * root . /etc/autoppp_env && cd /autoppp_ginan && python3 autoppp.py >> /var/log/autoppp.log 2>&1" > /etc/cron.d/autoppp \

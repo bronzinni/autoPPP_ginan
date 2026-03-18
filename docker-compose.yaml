@@ -41,6 +41,7 @@ services:
             - DB_USER=postgres
             - DB_PASSWORD=password
         volumes:
+            - ./config.json:/autoppp_ginan/config.json:ro
             - ./resources:/autoppp_ginan/resources:ro
             - /mnt/refgps:/mnt/refgps:ro
         networks:
