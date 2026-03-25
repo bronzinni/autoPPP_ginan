@@ -204,14 +204,19 @@ def unpack(filepath: str):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--days-back", type=int, default=2, help="Process from 2 days ago back to this many days ago (default: 2)")
+parser.add_argument("--from-days-back", type=int, default=2,
+                    help="First day to process, as days ago (default: 2)")
+parser.add_argument("--to-days-back", type=int, default=None,
+                    help="Last day to process, as days ago, inclusive (default: same as --from-days-back)")
 args = parser.parse_args()
+if args.to_days_back is None:
+    args.to_days_back = args.from_days_back
 
 autoppp_directory = os.path.dirname(__file__)
 
 # Phase 1: prepare each day sequentially (FTP downloads, DB queries)
 day_runs = []  # list of (config, workdir, product_path_dict, jobs)
-for days_back in range(2, args.days_back + 1):
+for days_back in range(args.from_days_back, args.to_days_back + 1):
     time_of_data = datetime.datetime.combine(
         datetime.datetime.now(datetime.timezone.utc).date() - datetime.timedelta(days=days_back),
         datetime.time.min,
