@@ -207,6 +207,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--days-back", type=int, default=2, help="Process from 2 days ago back to this many days ago (default: 2)")
 args = parser.parse_args()
 
+autoppp_directory = os.path.dirname(__file__)
+
+# Phase 1: prepare each day sequentially (FTP downloads, DB queries)
+day_runs = []  # list of (config, workdir, product_path_dict, jobs)
 for days_back in range(2, args.days_back + 1):
     time_of_data = datetime.datetime.combine(
         datetime.datetime.now(datetime.timezone.utc).date() - datetime.timedelta(days=days_back),
@@ -217,16 +221,11 @@ for days_back in range(2, args.days_back + 1):
 
     config = Config(time_of_data)
 
-    autoppp_directory = os.path.dirname(__file__)
-
     workdir = os.path.join(autoppp_directory, config.config["output_directory"],
                            f"{config.year}_{config.doy}")
     os.makedirs(workdir, exist_ok=True)
 
-
-    # download PPP products
     product_path_dict = {}
-    # should loop through config.config
     with FTP(config.config["ftp_servers"][0]["host"]) as ftp:
         ftp.login()
         ftp.cwd(config.config["ftp_servers"][0]["remote_folder"])
@@ -236,7 +235,7 @@ for days_back in range(2, args.days_back + 1):
             with open(local_product_file_path, "wb") as local_product_file:
                 ftp.retrbinary(f"RETR {file}", local_product_file.write)
             product_path_dict[product] = unpack(local_product_file_path)
- 
+
     with psycopg2.connect(
         host=os.environ.get("DB_HOST", "postgres"),
         port=os.environ.get("DB_PORT", 5432),
@@ -256,16 +255,25 @@ for days_back in range(2, args.days_back + 1):
 
     jobs = [SiteJob.from_site_row(row, config) for row in site_rows]
     logger.info(f"Sites to process: {[(j.sitename, j.target_crs_epsg) for j in jobs]}")
+    day_runs.append((config, workdir, product_path_dict, jobs))
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=config.config["ginan_instances"]) as executor:
-        futures = {executor.submit(process_obs_file, job, config, workdir, product_path_dict, autoppp_directory): job for job in jobs}
+# Phase 2: process all jobs across all days in one pool
+ginan_instances = day_runs[0][0].config["ginan_instances"] if day_runs else 1
+all_futures = {}
+with concurrent.futures.ThreadPoolExecutor(max_workers=ginan_instances) as executor:
+    for config, workdir, product_path_dict, jobs in day_runs:
+        for job in jobs:
+            f = executor.submit(process_obs_file, job, config, workdir, product_path_dict, autoppp_directory)
+            all_futures[f] = job
 
-    for future, job in futures.items():
-        try:
-            future.result()
-        except Exception:
-            logger.exception(f"Error processing {job.obs_file}")
+for future, job in all_futures.items():
+    try:
+        future.result()
+    except Exception:
+        logger.exception(f"Error processing {job.obs_file}")
 
+# Phase 3: clean up each day's workdir
+for _, workdir, _, _ in day_runs:
     shutil.rmtree(workdir)
     logger.info(f"Workdir cleaned up: {workdir}")
 
