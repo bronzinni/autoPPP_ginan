@@ -44,7 +44,7 @@ services:
             - ./config.json:/autoppp_ginan/config.json:ro
             - ./resources:/autoppp_ginan/resources:ro
             - /mnt/refgps:/mnt/refgps:ro
-            - ./autoppp_ginan.log:/var/log/autoppp_ginan.log
+            - ./logs:/autoppp_ginan/logs
         networks:
             - autoppp_ginan
 

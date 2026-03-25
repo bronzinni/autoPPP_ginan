@@ -34,8 +34,8 @@ COPY bin/crx2rnx /usr/local/bin/crx2rnx
 
 
 RUN chmod +x /usr/local/bin/crx2rnx \
-    && mkdir -p workdir \
-    && echo "0 1 * * * root . /etc/autoppp_env && cd /autoppp_ginan && /opt/conda/envs/autoppp_ginan/bin/python3 autoppp_ginan.py 2>> /var/log/autoppp_ginan.log" > /etc/cron.d/autoppp_ginan \
+    && mkdir -p workdir logs \
+    && echo "0 1 * * * root . /etc/autoppp_env && cd /autoppp_ginan && /opt/conda/envs/autoppp_ginan/bin/python3 autoppp_ginan.py" > /etc/cron.d/autoppp_ginan \
     && chmod 0644 /etc/cron.d/autoppp_ginan \
     && chmod +x entrypoint.sh
 

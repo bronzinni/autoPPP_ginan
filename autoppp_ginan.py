@@ -18,8 +18,10 @@ from dataclasses import dataclass
 from pyproj import Transformer
 
 
+_log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(_log_dir, exist_ok=True)
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(message)s",
-                    filename="/var/log/autoppp_ginan.log")
+                    filename=os.path.join(_log_dir, "autoppp_ginan.log"))
 logger = logging.getLogger(__name__)
 
 SECONDS_OF_WEEK = 7*24*60*60
