@@ -28,7 +28,6 @@ RUN /opt/conda/bin/conda init bash \
     && echo "conda activate autoppp_ginan" >> /root/.bashrc
 
 COPY autoppp_ginan.py .
-COPY ginan_template.yaml .
 COPY entrypoint.sh .
 COPY bin/crx2rnx /usr/local/bin/crx2rnx
 

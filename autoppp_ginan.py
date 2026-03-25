@@ -89,7 +89,7 @@ def process_obs_file(job: SiteJob, config, workdir, product_path_dict, autoppp_d
 
     obs_file_workdir_path = unpack(obs_file_workdir_path)
 
-    ginan_template_path = os.path.join(autoppp_directory, "ginan_template.yaml")
+    ginan_template_path = os.path.join(autoppp_directory, "resources", "ginan_template.yaml")
     with open(ginan_template_path) as yaml_file:
         ginan_template = yaml.load(yaml_file, Loader=yaml.FullLoader)
 
