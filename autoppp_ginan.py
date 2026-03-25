@@ -5,6 +5,7 @@ import datetime
 import logging
 
 import os
+import shutil
 import subprocess
 
 from ftplib import FTP
@@ -218,7 +219,9 @@ for days_back in range(2, args.days_back + 1):
 
     autoppp_directory = os.path.dirname(__file__)
 
-    workdir = os.path.join(autoppp_directory, config.config["output_directory"])
+    workdir = os.path.join(autoppp_directory, config.config["output_directory"],
+                           f"{config.year}_{config.doy}")
+    os.makedirs(workdir, exist_ok=True)
 
 
     # download PPP products
@@ -262,4 +265,7 @@ for days_back in range(2, args.days_back + 1):
             future.result()
         except Exception:
             logger.exception(f"Error processing {job.obs_file}")
+
+    shutil.rmtree(workdir)
+    logger.info(f"Workdir cleaned up: {workdir}")
 
