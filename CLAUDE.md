@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`autoppp.py` is an automated daily GNSS Precise Point Positioning (PPP) pipeline. It:
+`autoppp_ginan.py` is an automated daily GNSS Precise Point Positioning (PPP) pipeline. It:
 
 1. Targets a specific date (currently hardcoded to 2 days ago via `range(2, 3)`)
 2. Reads `config.json`, substituting `~WEEK~`, `~YEAR~`, `~DOY~` placeholders with GPS week, year, and day-of-year
@@ -17,9 +17,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Key Files
 
-- `autoppp.py` — main pipeline script
+- `autoppp_ginan.py` — main pipeline script
 - `config.json` — runtime configuration (FTP servers, file lists, directories); supports `~WEEK~`/`~YEAR~`/`~DOY~` placeholders
-- `ginan_template.yaml` — base Ginan `pea` config that gets populated with per-run paths; placeholders like `~ATX~`, `~CLK~`, `~SP3~` etc. are replaced by `autoppp.py` at runtime
+- `ginan_template.yaml` — base Ginan `pea` config that gets populated with per-run paths; placeholders like `~ATX~`, `~CLK~`, `~SP3~` etc. are replaced by `autoppp_ginan.py` at runtime
 
 ## ginan_template.yaml Overview
 
@@ -47,10 +47,11 @@ The template configures the Ginan `pea` Kalman filter-based PPP engine:
 
 ## Coordinate Conversions
 
-Ginan outputs ECEF coordinates in **ITRF2020**. After parsing the GPX, `autoppp.py` converts using `pyproj`:
+Ginan outputs ECEF coordinates in **ITRF2020**. After parsing the GPX, `autoppp_ginan.py` converts using `pyproj`:
 
-1. **ITRF2020 ECEF → ETRS89 geographic 3D**: `EPSG:9988` → `EPSG:4937`; PROJ automatically selects transformation `EPSG:10895`
-2. **ETRS89 geographic → ETRS89/UTM**: target zone snapped to nearest of {24, 29, 32}N using EPSG codes `25824` / `25829` / `25832`
+1. **ITRF2020 ECEF → target frame**: using a named PROJ transformation (e.g. `EPSG:10895` for ITRF2020→ETRS89); the transformation EPSG is stored per-site in `site_metadata.transform_epsg`; NULL means no transformation (stay in ITRF2020)
+2. **Target ECEF → geographic (GRS80)**: inverse `proj=cart` pipeline step
+3. **Target ECEF → ENU**: `proj=topocentric` relative to the reference position in `site_metadata`
 
 ## Database
 
@@ -71,9 +72,7 @@ Schema (`initdb.sql`) — single table `position`:
 | `sitename` | VARCHAR(50) | GNSS station name |
 | `x`, `y`, `z` | NUMERIC(10,5) | ITRF2020 ECEF coordinates |
 | `dx`, `dy`, `dz` | NUMERIC(3,5) | ECEF coordinate corrections |
-| `lat`, `lon`, `h_e` | NUMERIC(10,5) | ETRS89 geodetic coordinates |
-| `utm_zone` | VARCHAR(3) | UTM zone (e.g. `32N`) |
-| `easting`, `northing` | NUMERIC(10,3) | ETRS89/UTM coordinates (mm precision) |
+| `lat`, `lon`, `h_e` | NUMERIC(10,5) | Geographic coordinates on GRS80 |
 | `time_of_data` | TIMESTAMP | Epoch of the GNSS observations |
 | `time_of_calc` | TIMESTAMP | When the PPP solution was computed |
 
@@ -103,10 +102,10 @@ Grafana is defined in `docker-compose.yaml` but commented out (planned for visua
 docker build -t autoppp_ginan:latest .
 ```
 
-The container runs via `entrypoint.sh`, which writes `DB_*` environment variables to `/etc/autoppp_env` (so cron can access them) and then starts `cron -f`. A cron job in `/etc/cron.d/autoppp` runs `autoppp.py` daily at **01:00 UTC**, sourcing `/etc/autoppp_env` first. Output is logged to `/var/log/autoppp.log` inside the container.
+The container runs via `entrypoint.sh`, which writes `DB_*` environment variables to `/etc/autoppp_env` (so cron can access them) and then starts `cron -f`. A cron job in `/etc/cron.d/autoppp_ginan` runs `autoppp_ginan.py` daily at **01:00 UTC**, sourcing `/etc/autoppp_env` first. Output is logged to `/var/log/autoppp_ginan.log` inside the container.
 
 **Directly (outside Docker):**
 ```bash
-python autoppp.py                  # process 2 days ago (default)
-python autoppp.py --days-back 7   # process 2 through 7 days ago
+python autoppp_ginan.py                  # process 2 days ago (default)
+python autoppp_ginan.py --days-back 7    # process 2 through 7 days ago
 ```

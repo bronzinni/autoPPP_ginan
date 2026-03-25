@@ -32,7 +32,7 @@ outputs:
 
     gpx:
         output: true
-        filename: <RECEIVER>_<CONFIG>_<YYYY><DDD><HH>.GPX
+        filename: ~SITENAME~_~YEAR~~DOY~0000.GPX
 
 
 satellite_options:

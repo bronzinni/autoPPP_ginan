@@ -7,7 +7,7 @@ services:
             - POSTGRES_DB=postgres
         volumes:
             - ./db/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
-            - postgres_data:/var/lib/postgresql/data
+            - postgres_data:/var/lib/postgresql
         ports:
             - "9100:5432"
         restart: unless-stopped
@@ -30,7 +30,7 @@ services:
         networks:
             - autoppp_ginan
 
-    autoppp:
+    autoppp_ginan:
         image: autoppp_ginan:latest
         depends_on:
             - postgres
@@ -44,6 +44,7 @@ services:
             - ./config.json:/autoppp_ginan/config.json:ro
             - ./resources:/autoppp_ginan/resources:ro
             - /mnt/refgps:/mnt/refgps:ro
+            - ./autoppp_ginan.log:/var/log/autoppp_ginan.log
         networks:
             - autoppp_ginan
 

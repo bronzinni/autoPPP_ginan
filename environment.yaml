@@ -1,0 +1,8 @@
+name: autoppp_ginan
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - pyproj
+  - psycopg2
+  - pyyaml
