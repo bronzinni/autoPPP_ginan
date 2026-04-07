@@ -86,6 +86,9 @@ def process_obs_file(job: SiteJob, config, workdir, product_path_dict, autoppp_d
     obs_file_storage_path = os.path.join(autoppp_directory, job.obs_file)
     obs_file_workdir_path = os.path.join(workdir, os.path.basename(job.obs_file))
 
+    if not os.path.exists(obs_file_storage_path):
+        raise FileNotFoundError(f"Observation file not found: {obs_file_storage_path}")
+
     subprocess.run(["cp", obs_file_storage_path, obs_file_workdir_path])
 
     obs_file_workdir_path = unpack(obs_file_workdir_path)
