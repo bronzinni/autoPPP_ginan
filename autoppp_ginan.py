@@ -234,15 +234,23 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
     os.makedirs(workdir, exist_ok=True)
 
     product_path_dict = {}
-    with FTP(config.config["ftp_servers"][0]["host"]) as ftp:
-        ftp.login()
-        ftp.cwd(config.config["ftp_servers"][0]["remote_folder"])
-        for product, file in config.config["ftp_servers"][0]["files"].items():
-            local_product_file_path = os.path.join(workdir, file)
-            logger.info(f"Downloading {product}... ({file})")
-            with open(local_product_file_path, "wb") as local_product_file:
-                ftp.retrbinary(f"RETR {file}", local_product_file.write)
-            product_path_dict[product] = unpack(local_product_file_path)
+    for ftp_server in config.config["ftp_servers"]:
+        try:
+            with FTP(ftp_server["host"]) as ftp:
+                ftp.login()
+                ftp.cwd(ftp_server["remote_folder"])
+                for product, file in ftp_server["files"].items():
+                    local_product_file_path = os.path.join(workdir, file)
+                    logger.info(f"Downloading {product}... ({file})")
+                    with open(local_product_file_path, "wb") as local_product_file:
+                        ftp.retrbinary(f"RETR {file}", local_product_file.write)
+                    product_path_dict[product] = unpack(local_product_file_path)
+            break
+        except OSError as e:
+            logger.warning(f"FTP download from {ftp_server['host']} failed: {e}, trying next server...")
+    else:
+        logger.error(f"All FTP servers failed for {time_of_data.strftime('%Y-%m-%d')}, skipping day")
+        continue
 
     with psycopg2.connect(
         host=os.environ.get("DB_HOST", "postgres"),
