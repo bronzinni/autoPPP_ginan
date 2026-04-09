@@ -1,5 +1,6 @@
 import argparse
 import concurrent.futures
+import fnmatch
 import json
 import datetime
 import logging
@@ -211,6 +212,8 @@ parser.add_argument("--from-days-back", type=int, default=2,
                     help="First day to process, as days ago (default: 2)")
 parser.add_argument("--to-days-back", type=int, default=None,
                     help="Last day to process, as days ago, inclusive (default: same as --from-days-back)")
+parser.add_argument("--station", nargs="+", metavar="PATTERN",
+                    help="Only process stations matching these patterns (supports wildcards, e.g. 'ABC*')")
 args = parser.parse_args()
 if args.to_days_back is None:
     args.to_days_back = args.from_days_back
@@ -269,6 +272,9 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
             """, (time_of_data, time_of_data))
             site_rows = cur.fetchall()
 
+    if args.station:
+        site_rows = [row for row in site_rows
+                     if any(fnmatch.fnmatch(row[0].upper(), p.upper()) for p in args.station)]
     jobs = [SiteJob.from_site_row(row, config) for row in site_rows]
     logger.info(f"Sites to process: {[(j.sitename, j.target_crs_epsg) for j in jobs]}")
     day_runs.append((config, workdir, product_path_dict, jobs))
