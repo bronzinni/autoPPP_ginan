@@ -6,20 +6,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `autoppp_ginan.py` is an automated daily GNSS Precise Point Positioning (PPP) pipeline. It:
 
-1. Targets a specific date (currently hardcoded to 2 days ago via `range(2, 3)`)
-2. Reads `config.json`, substituting `~WEEK~`, `~YEAR~`, `~DOY~` placeholders with GPS week, year, and day-of-year
-3. Downloads PPP correction products (ERP, CLK, BIA, OBX, SP3) from an FTP server
-4. Unpacks `.gz` files and converts Hatanaka-compressed `.crx` RINEX files to `.rnx` using `crx2rnx`
-5. Generates a Ginan `pea` engine config from `ginan_template.yaml`, injecting observation files, correction products, and auxiliary resources (ATX antenna calibration, GPT2 troposphere grid, ocean tide BLQ)
-6. Runs the Ginan `pea` binary to perform PPP, producing a GPX output
-7. Processes observation files in parallel using `concurrent.futures.ThreadPoolExecutor` (capped at `ginan_instances` workers); each file gets its own `pea_config_{sitename}.yaml` to avoid conflicts
-8. For each file: runs `pea`, parses the GPX output, converts coordinates, and writes results to the database
+Execution is split into three phases:
+
+**Phase 1 (sequential, per-day):** For each day in the requested date range:
+1. Reads `config.json`, substituting `~WEEK~`, `~YEAR~`, `~DOY~`, `~SITENAME~` placeholders
+2. Creates a per-day workdir `{output_directory}/{year}_{doy}`
+3. Downloads PPP correction products (ERP, CLK, BIA, OBX, SP3) from an FTP server into the workdir
+4. Queries the `site_metadata` DB table to get the list of active sites for that day
+
+**Phase 2 (parallel):** All jobs across all days are batched into a single `ThreadPoolExecutor` (capped at `ginan_instances` workers). For each site/day job:
+5. Copies and unpacks the observation file (`.crx.gz` → `.rnx` via `gzip` + `crx2rnx`)
+6. Generates a per-site Ginan `pea` config from `resources/ginan_template.yaml`, injecting observation files, correction products, and auxiliary resources; each site gets its own `pea_config_{sitename}.yaml`
+7. Runs `pea`, parses the GPX output, converts coordinates, and writes results to the database
+
+**Phase 3:** Cleans up each day's workdir after all jobs complete.
 
 ## Key Files
 
 - `autoppp_ginan.py` — main pipeline script
-- `config.json` — runtime configuration (FTP servers, file lists, directories); supports `~WEEK~`/`~YEAR~`/`~DOY~` placeholders
-- `ginan_template.yaml` — base Ginan `pea` config that gets populated with per-run paths; placeholders like `~ATX~`, `~CLK~`, `~SP3~` etc. are replaced by `autoppp_ginan.py` at runtime
+- `config.json` — runtime configuration (FTP servers, file lists, directories); supports `~WEEK~`/`~YEAR~`/`~DOY~`/`~SITENAME~` placeholders
+- `resources/ginan_template.yaml` — base Ginan `pea` config that gets populated with per-run paths at runtime by `autoppp_ginan.py`
+- `db/initdb.sql` — PostgreSQL schema and example `site_metadata` seed data
 
 ## ginan_template.yaml Overview
 
@@ -37,7 +44,7 @@ The template configures the Ginan `pea` Kalman filter-based PPP engine:
 
 ## config.json Structure
 
-- **`observation_files`** — paths to RINEX observation files (`.crx.gz`); currently hardcoded to station `BUDP00DNK` on network mount `/mnt/refgps/GPSDATA/RINEX3/DNK/`
+- **`observation_file_template`** — path template for RINEX observation files (`.crx.gz`) with `~SITENAME~` placeholder; sites are driven by the `site_metadata` DB table
 - **`resources_directory`** — local path to static auxiliary files (`./resources`)
 - **`output_directory`** — working directory for downloads and outputs (`./workdir`)
 - **`offline_input`** — static resource files: `igs20.atx` (antenna calibration), `gpt_25.grd` (troposphere), `FES2014B.BLQ` (ocean tides)
@@ -49,9 +56,9 @@ The template configures the Ginan `pea` Kalman filter-based PPP engine:
 
 Ginan outputs ECEF coordinates in **ITRF2020**. After parsing the GPX, `autoppp_ginan.py` converts using `pyproj`:
 
-1. **ITRF2020 ECEF → target frame**: using a named PROJ transformation (e.g. `EPSG:10895` for ITRF2020→ETRS89); the transformation EPSG is stored per-site in `site_metadata.transform_epsg`; NULL means no transformation (stay in ITRF2020)
+1. **ITRF2020 ECEF → target frame**: using a named PROJ transformation (e.g. `EPSG:10890` for ITRF2020→ETRS89-DNK geocentric); the EPSG is stored per-site in `site_metadata.target_crs_epsg`; NULL means no transformation (stay in ITRF2020)
 2. **Target ECEF → geographic (GRS80)**: inverse `proj=cart` pipeline step
-3. **Target ECEF → ENU**: `proj=topocentric` relative to the reference position in `site_metadata`
+3. **Target ECEF → ENU**: `proj=topocentric` relative to the reference position (`x`, `y`, `z` in the target CRS) stored in `site_metadata`
 
 ## Database
 
@@ -65,18 +72,36 @@ Results are written to PostgreSQL using `psycopg2`. Connection is configured via
 | `DB_USER` | `postgres` | Username |
 | `DB_PASSWORD` | `password` | Password |
 
-Schema (`initdb.sql`) — single table `position`:
+Schema (`db/initdb.sql`) — two tables:
+
+**`site_metadata`** — active sites and their reference data:
 
 | Column | Type | Description |
 |---|---|---|
-| `sitename` | VARCHAR(50) | GNSS station name |
-| `x`, `y`, `z` | NUMERIC(10,5) | ITRF2020 ECEF coordinates |
-| `dx`, `dy`, `dz` | NUMERIC(3,5) | ECEF coordinate corrections |
-| `lat`, `lon`, `h_e` | NUMERIC(10,5) | Geographic coordinates on GRS80 |
-| `time_of_data` | TIMESTAMP | Epoch of the GNSS observations |
-| `time_of_calc` | TIMESTAMP | When the PPP solution was computed |
+| `sitename` | VARCHAR(50) | GNSS station name (PK with `valid_from`) |
+| `x`, `y`, `z` | NUMERIC(15,5) | Reference ECEF in target CRS (for ENU) |
+| `target_crs_epsg` | INT | EPSG of target CRS; NULL = stay in ITRF2020 |
+| `receiver` | VARCHAR(20) | Receiver type string for `pea` |
+| `antenna` | VARCHAR(20) | Antenna type string for `pea` |
+| `ecc_x/y/z` | NUMERIC(8,4) | Antenna eccentricity offsets |
+| `valid_from` | DATE | Start of validity (PK with `sitename`) |
+| `valid_to` | DATE | End of validity; NULL = currently active |
 
-Indexed on `sitename`, `time_of_data`, and `(sitename, time_of_data)`.
+**`position`** — PPP results:
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | BIGSERIAL | Auto-incrementing PK |
+| `sitename` | VARCHAR(50) | GNSS station name |
+| `x`, `y`, `z` | NUMERIC(15,5) | ECEF coordinates in target CRS |
+| `dx`, `dy`, `dz` | NUMERIC(8,5) | ECEF coordinate corrections |
+| `lat`, `lon` | NUMERIC(12,7) | Geographic coordinates on GRS80 |
+| `h_e` | NUMERIC(10,5) | Ellipsoidal height on GRS80 |
+| `e`, `n`, `u` | NUMERIC(8,4) | ENU offsets from reference position |
+| `time_of_data` | TIMESTAMP WITH TIME ZONE | Epoch of the GNSS observations |
+| `time_of_calc` | TIMESTAMP WITH TIME ZONE | When the PPP solution was computed |
+
+Indexed on `sitename`, `time_of_data`, and unique index on `(sitename, time_of_data)`.
 
 ## Dependencies
 
@@ -92,20 +117,20 @@ docker compose up
 ```
 
 Services:
-- **`postgres`** — PostgreSQL (host port 9100→5432), initialized via `initdb.sql`
-- **`autoppp`** — based on `gnssanalysis/ginan:v4.1.1` (`pea` bundled at `/usr/bin/pea`); mounts `./resources` read-only; DB connection passed via environment variables
-
-Grafana is defined in `docker-compose.yaml` but commented out (planned for visualization).
+- **`postgres`** — PostgreSQL (host port 9100→5432), initialized via `db/initdb.sql`
+- **`grafana`** — Grafana OSS (host port 3000→3000); provisioning config from `./grafana/`; visualizes PPP results from PostgreSQL
+- **`autoppp_ginan`** — based on `gnssanalysis/ginan:v4.1.1` (`pea` bundled at `/usr/bin/pea`); mounts `./resources` and `/mnt/refgps` read-only, `./logs` for log output; DB connection passed via environment variables
 
 **Building the Docker image:**
 ```bash
 docker build -t autoppp_ginan:latest .
 ```
 
-The container runs via `entrypoint.sh`, which writes `DB_*` environment variables to `/etc/autoppp_env` (so cron can access them) and then starts `cron -f`. A cron job in `/etc/cron.d/autoppp_ginan` runs `autoppp_ginan.py` daily at **01:00 UTC**, sourcing `/etc/autoppp_env` first. Output is logged to `/var/log/autoppp_ginan.log` inside the container.
+The container runs via `entrypoint.sh`, which writes `DB_*` environment variables to `/etc/autoppp_env` (so cron can access them) and then starts `cron -f`. A cron job in `/etc/cron.d/autoppp_ginan` runs `autoppp_ginan.py` daily at **01:00 UTC**, sourcing `/etc/autoppp_env` first. Output is logged to `./logs/autoppp_ginan.log` (mounted from the host).
 
 **Directly (outside Docker):**
 ```bash
-python autoppp_ginan.py                  # process 2 days ago (default)
-python autoppp_ginan.py --days-back 7    # process 2 through 7 days ago
+python autoppp_ginan.py                                   # process 2 days ago (default)
+python autoppp_ginan.py --from-days-back 7                # process 7 days ago only
+python autoppp_ginan.py --from-days-back 2 --to-days-back 7  # process days 2–7 ago
 ```
