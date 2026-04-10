@@ -2,7 +2,7 @@ FROM gnssanalysis/ginan:v4.1.1
 
 WORKDIR /autoppp_ginan
 
-RUN apt-get update && apt-get install -y cron \
+RUN apt-get update && apt-get install -y cron logrotate \
     && apt-get clean
 
 RUN curl -L https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -o /tmp/miniforge.sh \
@@ -34,8 +34,9 @@ COPY bin/crx2rnx /usr/local/bin/crx2rnx
 
 RUN chmod +x /usr/local/bin/crx2rnx \
     && mkdir -p workdir logs \
-    && echo "0 1 * * * root . /etc/autoppp_env && cd /autoppp_ginan && /opt/conda/envs/autoppp_ginan/bin/python3 autoppp_ginan.py" > /etc/cron.d/autoppp_ginan \
+    && printf '0 0 * * * root logrotate /etc/logrotate.d/autoppp_ginan\n0 1 * * * root . /etc/autoppp_env && cd /autoppp_ginan && /opt/conda/envs/autoppp_ginan/bin/python3 autoppp_ginan.py\n' > /etc/cron.d/autoppp_ginan \
     && chmod 0644 /etc/cron.d/autoppp_ginan \
-    && chmod +x entrypoint.sh
+    && chmod +x entrypoint.sh \
+    && printf '/autoppp_ginan/logs/autoppp_ginan.log {\n    daily\n    rotate 30\n    compress\n    delaycompress\n    missingok\n    notifempty\n    copytruncate\n}\n' > /etc/logrotate.d/autoppp_ginan
 
 CMD ["/autoppp_ginan/entrypoint.sh"]
