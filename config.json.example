@@ -1,7 +1,7 @@
 {
 "ginan_instances": 2,
 "pea_path": "/usr/bin/pea",
-"observation_file_template": "/mnt/refgps/GPSDATA/RINEX3/DNK/~YEAR~/~DOY~/~SITENAME~_R_~YEAR~~DOY~0000_01D_30S_MO.crx.gz",
+"observation_file_template": "/mnt/refgps/GPSDATA/RINEX3/~COUNTRY~/~YEAR~/~DOY~/~SITENAME~_R_~YEAR~~DOY~0000_01D_30S_MO.crx.gz",
 "resources_directory": "./resources",
 "output_directory": "./workdir",
 "offline_input": {"ATX": "igs20.atx", "gpt2": "gpt_25.grd", "ocean_tide": "FES2014B.BLQ"},

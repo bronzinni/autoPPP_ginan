@@ -72,12 +72,14 @@ class Config():
 #            for key, item in self.config.items():
 #                print(key, item)
 #        
-    def replace_placeholders(self, string: str, sitename: str = None):
+    def replace_placeholders(self, string: str, sitename: str = None): # We should not allow sitename to be zero...
         result = (string.replace("~WEEK~", self.week)
                         .replace("~YEAR~", self.year)
                         .replace("~DOY~", self.doy))
         if sitename is not None:
             result = result.replace("~SITENAME~", sitename)
+            country = sitename[-3:]
+            result = result.replace("~COUNTRY~", country)
         return result
 
 
