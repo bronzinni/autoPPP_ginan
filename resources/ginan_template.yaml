@@ -71,6 +71,10 @@ receiver_options:
                 use_2nd_order: true
                 use_3rd_order: true
 processing_options:
+    ambiguity_resolution:
+        elevation_mask: 10
+        mode: lambda
+
     process_modes:
         preprocessor: true # Preprocessing and quality checks
         spp: true # Perform SPP on receiver data
