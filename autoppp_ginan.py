@@ -293,6 +293,8 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=ginan_instances) as execu
 for future, job in all_futures.items():
     try:
         future.result()
+    except FileNotFoundError as e:
+        logger.warning(f"Skipping {job.sitename}: {e}")
     except Exception:
         logger.exception(f"Error processing {job.obs_file}")
 
