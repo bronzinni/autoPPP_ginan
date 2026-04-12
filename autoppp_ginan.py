@@ -151,6 +151,8 @@ def process_obs_file(job: SiteJob, config, workdir, product_path_dict, autoppp_d
     dz = float(root[1][1][-1][2][2][2].text)
     logger.debug(f"{job.sitename}: raw ITRF2020 ECEF from GPX: x={x}, y={y}, z={z}, dx={dx}, dy={dy}, dz={dz}")
 
+    raw_x, raw_y, raw_z = x, y, z
+
     # ITRF2020 ECEF -> target CRS from site_coordinates
     if job.target_crs_epsg is not None:
         decimal_year = config.time_of_data.year + (config.time_of_data.timetuple().tm_yday - 1) / 365.25
@@ -183,13 +185,13 @@ def process_obs_file(job: SiteJob, config, workdir, product_path_dict, autoppp_d
             cur.execute(
                 """
                 INSERT INTO position
-                    (sitename, x, y, z, dx, dy, dz, lat, lon, h_e, e, n, u,
+                    (sitename, raw_x, raw_y, raw_z, x, y, z, dx, dy, dz, lat, lon, h_e, e, n, u,
                      time_of_data, time_of_calc)
                 VALUES
-                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                      %s, %s)
                 """,
-                (job.sitename, x, y, z, dx, dy, dz, lat, lon, h_e, e, n, u,
+                (job.sitename, raw_x, raw_y, raw_z, x, y, z, dx, dy, dz, lat, lon, h_e, e, n, u,
                  config.time_of_data, datetime.datetime.now(datetime.timezone.utc)),
             )
         logger.info(f"DB write successful for {job.sitename} {config.time_of_data}")

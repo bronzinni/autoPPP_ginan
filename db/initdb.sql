@@ -19,6 +19,9 @@ CREATE UNIQUE INDEX ON site_metadata(sitename) WHERE valid_to IS NULL;
 CREATE TABLE IF NOT EXISTS position (
     id BIGSERIAL,
     sitename VARCHAR(50) NOT NULL,
+    raw_x NUMERIC(15,5),
+    raw_y NUMERIC(15,5),
+    raw_z NUMERIC(15,5),
     x NUMERIC(15,5),
     y NUMERIC(15,5),
     z NUMERIC(15,5),
