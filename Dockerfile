@@ -34,7 +34,7 @@ COPY bin/crx2rnx /usr/local/bin/crx2rnx
 
 RUN chmod +x /usr/local/bin/crx2rnx \
     && mkdir -p workdir logs \
-    && printf '0 0 * * * root logrotate /etc/logrotate.d/autoppp_ginan\n0 1 * * * root . /etc/autoppp_env && cd /autoppp_ginan && /opt/conda/envs/autoppp_ginan/bin/python3 autoppp_ginan.py\n' > /etc/cron.d/autoppp_ginan \
+    && printf '0 0 * * * root logrotate /etc/logrotate.d/autoppp_ginan\n0 1 * * * root . /etc/autoppp_env && cd /autoppp_ginan && /opt/conda/envs/autoppp_ginan/bin/python3 autoppp_ginan.py --from-days-back 2 --to-days-back 3 --skip-existing\n' > /etc/cron.d/autoppp_ginan \
     && chmod 0644 /etc/cron.d/autoppp_ginan \
     && chmod +x entrypoint.sh \
     && printf '/autoppp_ginan/logs/autoppp_ginan.log {\n    daily\n    rotate 30\n    compress\n    delaycompress\n    missingok\n    notifempty\n    copytruncate\n}\n' > /etc/logrotate.d/autoppp_ginan

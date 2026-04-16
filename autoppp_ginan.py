@@ -218,6 +218,8 @@ parser.add_argument("--to-days-back", type=int, default=None,
                     help="Last day to process, as days ago, inclusive (default: same as --from-days-back)")
 parser.add_argument("--station", nargs="+", metavar="PATTERN",
                     help="Only process stations matching these patterns (supports wildcards, e.g. 'ABC*')")
+parser.add_argument("--skip-existing", action="store_true",
+                    help="Skip site/day combinations that already have a result in the database")
 args = parser.parse_args()
 if args.to_days_back is None:
     args.to_days_back = args.from_days_back
@@ -279,6 +281,25 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
     if args.station:
         site_rows = [row for row in site_rows
                      if any(fnmatch.fnmatch(row[0].upper(), p.upper()) for p in args.station)]
+
+    if args.skip_existing:
+        with psycopg2.connect(
+            host=os.environ.get("DB_HOST", "postgres"),
+            port=os.environ.get("DB_PORT", 5432),
+            dbname=os.environ.get("DB_NAME", "postgres"),
+            user=os.environ.get("DB_USER", "postgres"),
+            password=os.environ.get("DB_PASSWORD", "password"),
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT sitename FROM position WHERE time_of_data = %s",
+                    (time_of_data,),
+                )
+                done_sites = {row[0] for row in cur.fetchall()}
+        site_rows = [row for row in site_rows if row[0] not in done_sites]
+        if done_sites:
+            logger.info(f"Skipping {len(done_sites)} site(s) already in database for {time_of_data.strftime('%Y-%m-%d')}")
+
     jobs = [SiteJob.from_site_row(row, config) for row in site_rows]
     logger.info(f"Sites to process: {[(j.sitename, j.target_crs_epsg) for j in jobs]}")
     day_runs.append((config, workdir, product_path_dict, jobs))
