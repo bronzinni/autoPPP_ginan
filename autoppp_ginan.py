@@ -136,9 +136,15 @@ def process_obs_file(job: SiteJob, config, workdir, product_path_dict, autoppp_d
 
     logger.info(f"Running Ginan for {job.sitename} (obs: {obs_file_workdir_path})")
     pea_result = subprocess.run([config.config["pea_path"], "-y", pea_config_path], capture_output=True, text=True)
-    logger.info(f"Ginan exited with code {pea_result.returncode} for {job.sitename}")
+    pea_log_path = os.path.join(_log_dir, f"pea_{job.sitename}_{config.time_of_data.strftime('%Y-%m-%d')}.log")
+    with open(pea_log_path, "w") as f:
+        f.write(pea_result.stdout)
+        if pea_result.stderr:
+            f.write("\n--- stderr ---\n")
+            f.write(pea_result.stderr)
+    logger.info(f"Ginan exited with code {pea_result.returncode} for {job.sitename} (log: {pea_log_path})")
     if pea_result.returncode != 0:
-        logger.error(f"Ginan stderr for {job.sitename}:\n{pea_result.stderr}")
+        logger.error(f"Ginan failed for {job.sitename}, see {pea_log_path}")
 
     tree = ET.parse(os.path.join(workdir, gpx_filename))
     root = tree.getroot()
@@ -225,6 +231,18 @@ if args.to_days_back is None:
     args.to_days_back = args.from_days_back
 
 autoppp_directory = os.path.dirname(__file__)
+_start_time = datetime.datetime.now(datetime.timezone.utc)
+
+today = datetime.datetime.now(datetime.timezone.utc).date()
+date_from = today - datetime.timedelta(days=args.from_days_back)
+date_to   = today - datetime.timedelta(days=args.to_days_back)
+n_days = args.to_days_back - args.from_days_back + 1
+plan_parts = [f"date range {date_from} to {date_to} ({n_days} day(s))"]
+if args.station:
+    plan_parts.append(f"station filter: {args.station}")
+if args.skip_existing:
+    plan_parts.append("skip existing: yes")
+logger.info(f"autoppp_ginan starting — {', '.join(plan_parts)}")
 
 # Phase 1: prepare each day sequentially (FTP downloads, DB queries)
 day_runs = []  # list of (config, workdir, product_path_dict, jobs)
@@ -250,7 +268,7 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
                 ftp.cwd(ftp_server["remote_folder"])
                 for product, file in ftp_server["files"].items():
                     local_product_file_path = os.path.join(workdir, file)
-                    logger.info(f"Downloading {product}... ({file})")
+                    logger.info(f"Downloading {product} from {ftp_server['host']}... ({file})")
                     with open(local_product_file_path, "wb") as local_product_file:
                         ftp.retrbinary(f"RETR {file}", local_product_file.write)
                     product_path_dict[product] = unpack(local_product_file_path)
@@ -301,11 +319,13 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
             logger.info(f"Skipping {len(done_sites)} site(s) already in database for {time_of_data.strftime('%Y-%m-%d')}")
 
     jobs = [SiteJob.from_site_row(row, config) for row in site_rows]
-    logger.info(f"Sites to process: {[(j.sitename, j.target_crs_epsg) for j in jobs]}")
+    logger.info(f"{len(jobs)} sites to process: {[j.sitename for j in jobs]}")
     day_runs.append((config, workdir, product_path_dict, jobs))
 
 # Phase 2: process all jobs across all days in one pool
 ginan_instances = day_runs[0][0].config["ginan_instances"] if day_runs else 1
+total_jobs = sum(len(jobs) for _, _, _, jobs in day_runs)
+logger.info(f"Submitting {total_jobs} job(s) across {len(day_runs)} day(s) with {ginan_instances} worker(s)")
 all_futures = {}
 with concurrent.futures.ThreadPoolExecutor(max_workers=ginan_instances) as executor:
     for config, workdir, product_path_dict, jobs in day_runs:
@@ -313,16 +333,24 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=ginan_instances) as execu
             f = executor.submit(process_obs_file, job, config, workdir, product_path_dict, autoppp_directory)
             all_futures[f] = job
 
+n_ok, n_fail = 0, 0
 for future, job in all_futures.items():
     try:
         future.result()
+        n_ok += 1
     except FileNotFoundError as e:
         logger.warning(f"Skipping {job.sitename}: {e}")
+        n_fail += 1
     except Exception:
         logger.exception(f"Error processing {job.obs_file}")
+        n_fail += 1
+logger.info(f"{n_ok} succeeded, {n_fail} failed")
 
 # Phase 3: clean up each day's workdir
 for _, workdir, _, _ in day_runs:
     shutil.rmtree(workdir)
     logger.info(f"Workdir cleaned up: {workdir}")
+
+elapsed = datetime.datetime.now(datetime.timezone.utc) - _start_time
+logger.info(f"autoppp_ginan finished in {elapsed}")
 
