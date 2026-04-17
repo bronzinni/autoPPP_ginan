@@ -18,29 +18,47 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "panels": [
     {
       "datasource": {
+        "type": "grafana-postgresql-datasource",
         "uid": "PCC52D03280B7034C"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
             },
-            "footer": {
-              "reducers": []
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
             },
-            "inspect": false
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
-          "decimals": 4,
+          "links": [
+            {
+              "targetBlank": true,
+              "title": "Time series",
+              "url": "d/autoppp-ginan/autoppp-ginan?orgId=1${__url_time_range}&var-station=${__data.fields.sitename}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -48,437 +66,41 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "target_crs_epsg"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 0
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 9,
+      "id": 2,
       "options": {
-        "cellHeight": "sm",
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "target_crs_epsg"
-          }
-        ]
-      },
-      "pluginVersion": "12.3.3",
-      "targets": [
-        {
-          "dataset": "postgres",
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT x, y, z, target_crs_epsg, receiver, antenna, ecc_x, ecc_y, ecc_z, valid_from, valid_to FROM site_metadata WHERE sitename = '$station' AND\r\n  ((valid_from < $__timeTo() AND valid_to IS NULL) OR (valid_to BETWEEN $__timeFrom() AND $__timeTo()))",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "$station metadata",
-      "transparent": true,
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "PCC52D03280B7034C"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "decimals": 4,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 5
-      },
-      "id": 10,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Coordinate"
-          }
-        ]
-      },
-      "pluginVersion": "12.3.3",
-      "targets": [
-        {
-          "dataset": "postgres",
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  coord                         AS \"Coordinate\",\r\n  avg_diff                      As \"Mean difference from reference\",\r\n  avg_val                       AS \"Mean\",\r\n  std_val                       AS \"Standard deviation\"\r\nFROM (\r\n  SELECT 'x' AS coord,\r\n    AVG(p.x)                        AS avg_val,\r\n    AVG(p.x - m.x)                  AS avg_diff,\r\n    STDDEV(p.x)                     AS std_val\r\n  FROM position p\r\n  LEFT OUTER JOIN site_metadata m ON p.sitename = m.sitename\r\n  WHERE p.sitename = '$station' AND $__timeFilter(time_of_data) \r\n\r\n  UNION ALL\r\n\r\n  SELECT 'y',\r\n    AVG(p.y),\r\n    AVG(p.y- m.y),\r\n    STDDEV(p.y)\r\n  FROM position p\r\n  LEFT OUTER JOIN site_metadata m ON p.sitename = m.sitename\r\n  WHERE p.sitename = '$station' AND $__timeFilter(time_of_data) \r\n\r\n  UNION ALL\r\n\r\n  SELECT 'z',\r\n    AVG(p.z),\r\n    AVG(p.z- m.z),\r\n    STDDEV(p.z)\r\n  FROM position p\r\n  LEFT OUTER JOIN site_metadata m ON p.sitename = m.sitename\r\n  WHERE p.sitename = '$station' AND $__timeFilter(time_of_data) \r\n) stats\r\nORDER BY coord ASC;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Statistics for geocentric coordinates based on $solution_count solutions",
-      "transparent": true,
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "PCC52D03280B7034C"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "decimals": 4,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 5
-      },
-      "id": 11,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Coordinate"
-          }
-        ]
-      },
-      "pluginVersion": "12.3.3",
-      "targets": [
-        {
-          "dataset": "postgres",
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  coord                         AS \"Coordinate\",\r\n  avg_val                       AS \"Mean\",\r\n  std_val                       AS \"Standard deviation\"\r\nFROM (\r\n  SELECT 'e' AS coord,\r\n    AVG(p.e)                        AS avg_val,\r\n    STDDEV(p.e)                     AS std_val\r\n  FROM position p\r\n  LEFT OUTER JOIN site_metadata m ON p.sitename = m.sitename\r\n  WHERE p.sitename = '$station' AND $__timeFilter(time_of_data) \r\n\r\n  UNION ALL\r\n\r\n  SELECT 'n',\r\n    AVG(p.n),\r\n    STDDEV(p.n)\r\n  FROM position p\r\n  LEFT OUTER JOIN site_metadata m ON p.sitename = m.sitename\r\n  WHERE p.sitename = '$station' AND $__timeFilter(time_of_data) \r\n\r\n  UNION ALL\r\n\r\n  SELECT 'u',\r\n    AVG(p.u),\r\n    STDDEV(p.u)\r\n  FROM position p\r\n  LEFT OUTER JOIN site_metadata m ON p.sitename = m.sitename\r\n  WHERE p.sitename = '$station' AND $__timeFilter(time_of_data) \r\n) stats\r\nORDER BY coord;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Statistics on ENU coordinates based on $solution_count solutions",
-      "transparent": true,
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "PCC52D03280B7034C"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": true,
-            "axisColorMode": "text",
-            "axisGridShow": true,
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "fillOpacity": 50,
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "pointShape": "circle",
-            "pointSize": {
-              "fixed": 5
-            },
-            "pointStrokeWidth": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "show": "points"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 0,
-        "y": 11
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "mapping": "auto",
-        "series": [
-          {}
-        ],
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.3",
-      "targets": [
-        {
-          "dataset": "postgres",
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT time_of_data, e as \"East\", n as \"North\" FROM position WHERE $__timeFilter(time_of_data) AND sitename = '$station'",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Horizontal difference from reference",
-      "type": "xychart"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "PCC52D03280B7034C"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 12,
-        "y": 11
-      },
-      "id": 7,
-      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
+        "orientation": "auto",
+        "showValue": "always",
+        "stacking": "none",
         "tooltip": {
           "hideZeros": false,
           "mode": "single",
           "sort": "none"
-        }
+        },
+        "xField": "sitename",
+        "xTickLabelRotation": 90,
+        "xTickLabelSpacing": 0
       },
       "pluginVersion": "12.3.3",
       "targets": [
@@ -487,7 +109,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT time_of_data as \"time\", e as \"East\", n as \"North\", u as \"Up\" FROM position WHERE $__timeFilter(time_of_data) AND sitename = '$station' ",
+          "rawSql": "SELECT sitename, AVG(e) as e,AVG(n) as n, AVG(u) as u FROM position WHERE $__timeFilter(time_of_data) GROUP BY sitename ORDER BY AVG(e^2 + n^2 + u^2) DESC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -508,128 +130,20 @@
           }
         }
       ],
-      "title": "ENU",
-      "type": "timeseries"
+      "title": "Average ENU",
+      "type": "barchart"
     },
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "PCC52D03280B7034C"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      },
-      "id": 8,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.3",
-      "targets": [
-        {
-          "dataset": "postgres",
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  time_of_data AS \"time\",\r\n  h_e as \"Height above ellipsoid\",\r\n  AVG(h_e) OVER (PARTITION BY sitename ORDER BY time_of_data ROWS BETWEEN 13 PRECEDING AND CURRENT ROW) as \"14-day moving average\"\r\n  FROM position WHERE sitename = '$station' AND $__timeFilter(time_of_data) GROUP BY sitename, time_of_data, h_e ORDER BY sitename, time_of_data ",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Height above ellipsoid",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "PostgreSQL"
-      },
-      "fieldConfig": {
-        "defaults": {
           "custom": {
             "hideFrom": {
               "legend": false,
@@ -637,17 +151,33 @@
               "viz": false
             }
           },
+          "decimals": 4,
+          "links": [
+            {
+              "targetBlank": true,
+              "title": "Time series",
+              "url": "d/autoppp-ginan/autoppp-ginan?orgId=1${__url_time_range}&var-station=${__data.fields.sitename}"
+            }
+          ],
           "mappings": [],
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": 0
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 99
               }
             ]
           }
@@ -655,13 +185,20 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 25,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 8
       },
-      "id": 5,
+      "id": 1,
       "options": {
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "noRepeat": false,
+          "opacity": 1,
+          "type": "osm-standard"
+        },
         "controls": {
           "mouseWheelZoom": true,
           "showAttribution": true,
@@ -675,19 +212,48 @@
             "config": {
               "showLegend": true,
               "style": {
+                "color": {
+                  "field": "colour",
+                  "fixed": "dark-green"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
                 "size": {
-                  "fixed": 10
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
                 },
                 "symbol": {
                   "fixed": "img/icons/marker/circle.svg",
                   "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "sitename",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 8,
+                  "offsetX": 8,
+                  "offsetY": 0,
+                  "textAlign": "left",
+                  "textBaseline": "middle"
                 }
               }
             },
             "location": {
               "mode": "auto"
             },
-            "name": "Stations",
+            "name": "Availability",
             "tooltip": true,
             "type": "markers"
           }
@@ -701,17 +267,23 @@
           "lat": 0,
           "lon": 0,
           "noRepeat": false,
-          "zoom": 5
+          "zoom": 15
         }
       },
       "pluginVersion": "12.3.3",
       "targets": [
         {
+          "dataset": "postgres",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "PCC52D03280B7034C"
+          },
           "editorMode": "code",
           "format": "table",
+          "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT DISTINCT ON (sitename) sitename, lat AS latitude, lon AS longitude FROM position WHERE sitename = '$station' ORDER BY sitename, time_of_data DESC",
-          "refId": "A",
+          "rawSql": "WITH constants AS (\r\n    SELECT\r\n        6378137.0        AS a,\r\n        6356752.3142     AS b,\r\n        0.00669437999014 AS e2,\r\n        0.00673949674228 AS ep2\r\n),\r\ninput AS (\r\nSELECT m.sitename AS sitename,\r\n  m.x AS X, m.y AS Y, m.z AS Z\r\nFROM site_metadata m\r\n),\r\np_theta AS (\r\n    SELECT\r\n        sitename, X, Y, Z, a, b, e2, ep2,\r\n        sqrt(X*X + Y*Y)                    AS p,\r\n        atan2(Z * a, sqrt(X*X + Y*Y) * b)  AS theta\r\n    FROM input CROSS JOIN constants\r\n),\r\ncalc AS (\r\n    SELECT\r\n    sitename,\r\n        degrees(atan2(Y, X))  AS lon_deg,\r\n        atan2(\r\n            Z   + ep2 * b * pow(sin(theta), 3),\r\n            p   - e2  * a * pow(cos(theta), 3)\r\n        )                     AS lat_rad\r\n    FROM p_theta\r\n),\r\ncolour AS (\r\n     SELECT\r\n     calc.sitename,\r\n     CAST(count(time_of_data) AS float) / ($__to - $__from) * 86400000 * 100 as colour\r\n     FROM position pos\r\n     RIGHT OUTER JOIN calc ON pos.sitename = calc.sitename\r\n     WHERE $__timeFilter(time_of_data) OR time_of_data IS NULL\r\n     GROUP BY calc.sitename\r\n)\r\nSELECT\r\n    calc.sitename,\r\n    round(degrees(lat_rad)::numeric, 8) AS lat,\r\n    round(lon_deg::numeric,          8) AS lon,\r\n    colour\r\nFROM calc\r\nINNER JOIN colour on calc.sitename = colour.sitename",
+          "refId": "B",
           "sql": {
             "columns": [
               {
@@ -731,159 +303,23 @@
           }
         }
       ],
-      "title": "Station Locations",
+      "title": "Station availability map",
       "type": "geomap"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "PostgreSQL"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "decimals": 4,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "lat"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 7
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "lon"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 7
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 44
-      },
-      "id": 4,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true
-      },
-      "pluginVersion": "12.3.3",
-      "targets": [
-        {
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT sitename, raw_x, raw_y, raw_z, x, y, z, lat, lon, h_e, time_of_data, time_of_calc FROM position WHERE sitename = '$station' AND $__timeFilter(time_of_data)  ORDER BY sitename, time_of_data DESC",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Latest solutions",
-      "type": "table"
     }
   ],
   "preload": false,
-  "refresh": "1h",
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": [
-      {
-        "allowCustomValue": false,
-        "current": {
-          "text": "BUDD00DNK",
-          "value": "BUDD00DNK"
-        },
-        "datasource": {
-          "type": "postgres",
-          "uid": "PostgreSQL"
-        },
-        "includeAll": false,
-        "label": "Station",
-        "name": "station",
-        "options": [],
-        "query": "SELECT DISTINCT sitename FROM position ORDER BY sitename",
-        "refresh": 2,
-        "type": "query"
-      },
-      {
-        "allowCustomValue": false,
-        "current": {
-          "text": "15",
-          "value": "15"
-        },
-        "definition": "SELECT COUNT(x) FROM position WHERE sitename = '$station' AND $__timeFilter(time_of_data)",
-        "hide": 2,
-        "name": "solution_count",
-        "options": [],
-        "query": "SELECT COUNT(x) FROM position WHERE sitename = '$station' AND $__timeFilter(time_of_data)",
-        "refresh": 2,
-        "regex": "",
-        "type": "query"
-      }
-    ]
+    "list": []
   },
   "time": {
-    "from": "now-16d",
+    "from": "now-9d",
     "to": "now-2d"
   },
   "timepicker": {},
-  "timezone": "utc",
-  "title": "autoPPP Ginan",
-  "uid": "autoppp-ginan",
-  "version": 2
+  "timezone": "browser",
+  "title": "Map overview",
+  "uid": "adxzd6v",
+  "version": 4
 }

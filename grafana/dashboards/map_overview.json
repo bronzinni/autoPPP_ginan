@@ -1,201 +1,213 @@
 {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": {
-            "type": "grafana",
-            "uid": "-- Grafana --"
-          },
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "type": "dashboard"
-        }
-      ]
-    },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": 2,
-    "links": [],
-    "panels": [
+  "annotations": {
+    "list": [
       {
+        "builtIn": 1,
         "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "PCC52D03280B7034C"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
-        "description": "",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "custom": {
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              }
-            },
-            "decimals": 4,
-            "mappings": [],
-            "thresholds": {
-              "mode": "percentage",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": 0
-                },
-                {
-                  "color": "#EAB839",
-                  "value": 1
-                },
-                {
-                  "color": "#6ED0E0",
-                  "value": 50
-                },
-                {
-                  "color": "green",
-                  "value": 99
-                }
-              ]
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "PCC52D03280B7034C"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
             }
           },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 25,
-          "w": 24,
-          "x": 0,
-          "y": 0
-        },
-        "id": 1,
-        "options": {
-          "basemap": {
-            "config": {},
-            "name": "Layer 0",
-            "noRepeat": false,
-            "opacity": 1,
-            "type": "osm-standard"
-          },
-          "controls": {
-            "mouseWheelZoom": true,
-            "showAttribution": true,
-            "showDebug": false,
-            "showMeasure": false,
-            "showScale": false,
-            "showZoom": true
-          },
-          "layers": [
+          "decimals": 4,
+          "links": [
             {
-              "config": {
-                "showLegend": true,
-                "style": {
-                  "color": {
-                    "field": "colour",
-                    "fixed": "dark-green"
-                  },
-                  "opacity": 1,
-                  "rotation": {
-                    "fixed": 0,
-                    "max": 360,
-                    "min": -360,
-                    "mode": "mod"
-                  },
-                  "size": {
-                    "fixed": 5,
-                    "max": 15,
-                    "min": 2
-                  },
-                  "symbol": {
-                    "fixed": "img/icons/marker/circle.svg",
-                    "mode": "fixed"
-                  },
-                  "symbolAlign": {
-                    "horizontal": "center",
-                    "vertical": "center"
-                  },
-                  "textConfig": {
-                    "fontSize": 12,
-                    "offsetX": 0,
-                    "offsetY": 0,
-                    "textAlign": "center",
-                    "textBaseline": "middle"
-                  }
-                }
-              },
-              "location": {
-                "mode": "auto"
-              },
-              "name": "Availability",
-              "tooltip": true,
-              "type": "markers"
+              "targetBlank": true,
+              "title": "Timeseries",
+              "url": "d/autoppp-ginan/autoppp-ginan?orgId=1${__url_time_range}&var-station=${__data.fields.sitename}&var-timezone=utc"
             }
           ],
-          "tooltip": {
-            "mode": "details"
-          },
-          "view": {
-            "allLayers": true,
-            "id": "fit",
-            "lat": 0,
-            "lon": 0,
-            "noRepeat": false,
-            "zoom": 15
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
           }
         },
-        "pluginVersion": "12.3.3",
-        "targets": [
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 25,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "noRepeat": false,
+          "opacity": 1,
+          "type": "osm-standard"
+        },
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
           {
-            "dataset": "postgres",
-            "datasource": {
-              "type": "grafana-postgresql-datasource",
-              "uid": "PCC52D03280B7034C"
+            "config": {
+              "showLegend": true,
+              "style": {
+                "color": {
+                  "field": "colour",
+                  "fixed": "dark-green"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "sitename",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 8,
+                  "offsetX": 8,
+                  "offsetY": 0,
+                  "textAlign": "left",
+                  "textBaseline": "middle"
+                }
+              }
             },
-            "editorMode": "code",
-            "format": "table",
-            "hide": false,
-            "rawQuery": true,
-            "rawSql": "WITH constants AS (\r\n    SELECT\r\n        6378137.0        AS a,\r\n        6356752.3142     AS b,\r\n        0.00669437999014 AS e2,\r\n        0.00673949674228 AS ep2\r\n),\r\ninput AS (\r\nSELECT m.sitename AS sitename,\r\n  m.x AS X, m.y AS Y, m.z AS Z\r\nFROM site_metadata m\r\n),\r\np_theta AS (\r\n    SELECT\r\n        sitename, X, Y, Z, a, b, e2, ep2,\r\n        sqrt(X*X + Y*Y)                    AS p,\r\n        atan2(Z * a, sqrt(X*X + Y*Y) * b)  AS theta\r\n    FROM input CROSS JOIN constants\r\n),\r\ncalc AS (\r\n    SELECT\r\n    sitename,\r\n        degrees(atan2(Y, X))  AS lon_deg,\r\n        atan2(\r\n            Z   + ep2 * b * pow(sin(theta), 3),\r\n            p   - e2  * a * pow(cos(theta), 3)\r\n        )                     AS lat_rad\r\n    FROM p_theta\r\n),\r\ncolour AS (\r\n     SELECT\r\n     calc.sitename,\r\n     CAST(count(time_of_data) AS float) / ($__to - $__from) * 86400000 * 100 as colour\r\n     FROM position pos\r\n     RIGHT OUTER JOIN calc ON pos.sitename = calc.sitename\r\n     WHERE $__timeFilter(time_of_data) OR time_of_data IS NULL\r\n     GROUP BY calc.sitename\r\n)\r\nSELECT\r\n    calc.sitename,\r\n    round(degrees(lat_rad)::numeric, 8) AS lat,\r\n    round(lon_deg::numeric,          8) AS lon,\r\n    colour\r\nFROM calc\r\nINNER JOIN colour on calc.sitename = colour.sitename",
-            "refId": "B",
-            "sql": {
-              "columns": [
-                {
-                  "parameters": [],
-                  "type": "function"
-                }
-              ],
-              "groupBy": [
-                {
-                  "property": {
-                    "type": "string"
-                  },
-                  "type": "groupBy"
-                }
-              ],
-              "limit": 50
-            }
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Availability",
+            "tooltip": true,
+            "type": "markers"
           }
         ],
-        "title": "Station availability map",
-        "type": "geomap"
-      }
-    ],
-    "preload": false,
-    "schemaVersion": 42,
-    "tags": [],
-    "templating": {
-      "list": []
-    },
-    "time": {
-      "from": "now-9d",
-      "to": "now-2d"
-    },
-    "timepicker": {},
-    "timezone": "browser",
-    "title": "Map overview",
-    "uid": "adxzd6v",
-    "version": 3
-  }
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "fit",
+          "lat": 0,
+          "lon": 0,
+          "noRepeat": false,
+          "zoom": 15
+        }
+      },
+      "pluginVersion": "12.3.3",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "PCC52D03280B7034C"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH constants AS (\r\n    SELECT\r\n        6378137.0        AS a,\r\n        6356752.3142     AS b,\r\n        0.00669437999014 AS e2,\r\n        0.00673949674228 AS ep2\r\n),\r\ninput AS (\r\nSELECT m.sitename AS sitename,\r\n  m.x AS X, m.y AS Y, m.z AS Z\r\nFROM site_metadata m\r\n),\r\np_theta AS (\r\n    SELECT\r\n        sitename, X, Y, Z, a, b, e2, ep2,\r\n        sqrt(X*X + Y*Y)                    AS p,\r\n        atan2(Z * a, sqrt(X*X + Y*Y) * b)  AS theta\r\n    FROM input CROSS JOIN constants\r\n),\r\ncalc AS (\r\n    SELECT\r\n    sitename,\r\n        degrees(atan2(Y, X))  AS lon_deg,\r\n        atan2(\r\n            Z   + ep2 * b * pow(sin(theta), 3),\r\n            p   - e2  * a * pow(cos(theta), 3)\r\n        )                     AS lat_rad\r\n    FROM p_theta\r\n),\r\ncolour AS (\r\n     SELECT\r\n     calc.sitename,\r\n     CAST(count(time_of_data) AS float) / ($__to - $__from) * 86400000 * 100 as colour\r\n     FROM position pos\r\n     RIGHT OUTER JOIN calc ON pos.sitename = calc.sitename\r\n     WHERE $__timeFilter(time_of_data) OR time_of_data IS NULL\r\n     GROUP BY calc.sitename\r\n)\r\nSELECT\r\n    calc.sitename,\r\n    round(degrees(lat_rad)::numeric, 8) AS lat,\r\n    round(lon_deg::numeric,          8) AS lon,\r\n    colour\r\nFROM calc\r\nINNER JOIN colour on calc.sitename = colour.sitename",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Station availability map",
+      "type": "geomap"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-9d",
+    "to": "now-2d"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Map overview",
+  "uid": "adxzd6v",
+  "version": 1
+}
