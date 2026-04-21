@@ -72,7 +72,7 @@ class Config():
 #            for key, item in self.config.items():
 #                print(key, item)
 #        
-    def replace_placeholders(self, string: str, sitename: str = None): # We should not allow sitename to be zero...
+    def replace_placeholders(self, string: str, sitename: str = None):
         result = (string.replace("~WEEK~", self.week)
                         .replace("~YEAR~", self.year)
                         .replace("~DOY~", self.doy))
@@ -266,7 +266,7 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
             with FTP(ftp_server["host"]) as ftp:
                 ftp.login()
                 ftp.cwd(ftp_server["remote_folder"])
-                for product, file in ftp_server["files"].items():
+                for product, file in ftp_server["rapid"].items():
                     local_product_file_path = os.path.join(workdir, file)
                     logger.info(f"Downloading {product} from {ftp_server['host']}... ({file})")
                     with open(local_product_file_path, "wb") as local_product_file:
