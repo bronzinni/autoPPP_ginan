@@ -161,7 +161,7 @@
           ],
           "mappings": [],
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               {
                 "color": "red",
@@ -321,5 +321,5 @@
   "timezone": "browser",
   "title": "Map overview",
   "uid": "adxzd6v",
-  "version": 4
+  "version": 1
 }
