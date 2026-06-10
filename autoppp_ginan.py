@@ -291,8 +291,8 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
                 SELECT sitename, target_crs_epsg, x, y, z,
                        receiver, antenna, ecc_x, ecc_y, ecc_z
                 FROM site_metadata
-                WHERE valid_from <= %s
-                  AND (valid_to IS NULL OR valid_to > %s)
+                WHERE valid_from <= %s::date
+                  AND (valid_to IS NULL OR valid_to >= %s::date)
             """, (time_of_data, time_of_data))
             site_rows = cur.fetchall()
 

@@ -95,7 +95,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT x, y, z, target_crs_epsg, receiver, antenna, ecc_x, ecc_y, ecc_z, valid_from, valid_to FROM site_metadata WHERE sitename = '$station' AND\r\n  ((valid_from < $__timeTo() AND valid_to IS NULL) OR (valid_to BETWEEN $__timeFrom() AND $__timeTo()))",
+          "rawSql": "SELECT x, y, z, target_crs_epsg, receiver, antenna, ecc_x, ecc_y, ecc_z, valid_from, valid_to FROM site_metadata WHERE sitename = '$station' AND (\r\n  ($__timeFrom()::date BETWEEN valid_from AND valid_to) OR\r\n  ($__timeFrom()::date >= valid_from AND valid_to IS NULL) OR\r\n  ($__timeTo()::date BETWEEN valid_from AND valid_to) OR\r\n  ($__timeTo()::date >= valid_from AND valid_to IS NULL))",
           "refId": "A",
           "sql": {
             "columns": [
