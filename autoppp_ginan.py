@@ -138,7 +138,7 @@ def process_obs_file(job: SiteJob, config, workdir, product_path_dict, autoppp_d
         site_options['receiver_type'] = job.receiver
     if job.antenna is not None:
         site_options['antenna_type'] = job.antenna
-    ginan_template['receiver_options'] = {site_code: site_options}
+    ginan_template['receiver_options'][site_code] = site_options
 
     pea_config_path = os.path.join(workdir, f'pea_config_{job.sitename}.yaml')
     with open(pea_config_path, 'w') as yaml_out:
