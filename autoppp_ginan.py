@@ -20,6 +20,16 @@ from dataclasses import dataclass
 from pyproj import Transformer
 
 
+def db_connect():
+    return psycopg2.connect(
+        host=os.environ.get("DB_HOST", "postgres"),
+        port=os.environ.get("DB_PORT", 5432),
+        dbname=os.environ.get("DB_NAME", "postgres"),
+        user=os.environ.get("DB_USER", "postgres"),
+        password=os.environ.get("DB_PASSWORD", "password"),
+    )
+
+
 _log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 os.makedirs(_log_dir, exist_ok=True)
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(message)s",
@@ -180,13 +190,7 @@ def process_obs_file(job: SiteJob, config, workdir, product_path_dict, autoppp_d
 
     logger.info(f"{job.sitename} {config.time_of_data}: xyz=({x}, {y}, {z}) lat={lat} lon={lon} h_e={h_e} enu=({e}, {n}, {u})")
 
-    with psycopg2.connect(
-        host=os.environ.get("DB_HOST", "postgres"),
-        port=os.environ.get("DB_PORT", 5432),
-        dbname=os.environ.get("DB_NAME", "postgres"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ.get("DB_PASSWORD", "password"),
-    ) as conn:
+    with db_connect() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -279,13 +283,7 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
         logger.error(f"All FTP servers failed for {time_of_data.strftime('%Y-%m-%d')}, skipping day")
         continue
 
-    with psycopg2.connect(
-        host=os.environ.get("DB_HOST", "postgres"),
-        port=os.environ.get("DB_PORT", 5432),
-        dbname=os.environ.get("DB_NAME", "postgres"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ.get("DB_PASSWORD", "password"),
-    ) as conn:
+    with db_connect() as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT sitename, target_crs_epsg, x, y, z,
@@ -301,13 +299,7 @@ for days_back in range(args.from_days_back, args.to_days_back + 1):
                      if any(fnmatch.fnmatch(row[0].upper(), p.upper()) for p in args.station)]
 
     if args.skip_existing:
-        with psycopg2.connect(
-            host=os.environ.get("DB_HOST", "postgres"),
-            port=os.environ.get("DB_PORT", 5432),
-            dbname=os.environ.get("DB_NAME", "postgres"),
-            user=os.environ.get("DB_USER", "postgres"),
-            password=os.environ.get("DB_PASSWORD", "password"),
-        ) as conn:
+        with db_connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT sitename FROM position WHERE time_of_data = %s",
